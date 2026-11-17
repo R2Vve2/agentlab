@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+traces/
+evals/results.json
+pip.log
+docker-build.log
+.env

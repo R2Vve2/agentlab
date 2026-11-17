@@ -1,0 +1,10 @@
+[
+  {"sku": "HP-220", "name": "NovaSound ANC Headphones", "category": "audio headphones", "price": 199.0, "stock": 14, "warranty_months": 24},
+  {"sku": "HP-110", "name": "NovaSound Lite Headphones", "category": "audio headphones", "price": 79.0, "stock": 0, "warranty_months": 12},
+  {"sku": "SP-012", "name": "PocketBeat Bluetooth Speaker", "category": "audio speaker", "price": 59.0, "stock": 40, "warranty_months": 12},
+  {"sku": "KB-110", "name": "KeyForge Mechanical Keyboard", "category": "peripherals keyboard", "price": 89.0, "stock": 22, "warranty_months": 24},
+  {"sku": "MS-050", "name": "GlidePro Wireless Mouse", "category": "peripherals mouse", "price": 39.0, "stock": 61, "warranty_months": 12},
+  {"sku": "MN-270", "name": "ClearView 27-inch Monitor", "category": "displays monitor", "price": 329.0, "stock": 5, "warranty_months": 36},
+  {"sku": "MN-240", "name": "ClearView 24-inch Monitor", "category": "displays monitor", "price": 219.0, "stock": 9, "warranty_months": 36},
+  {"sku": "CB-USBC", "name": "VoltLink USB-C Cable 2m", "category": "accessories cable", "price": 12.0, "stock": 300, "warranty_months": 6}
+]

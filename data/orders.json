@@ -1,0 +1,41 @@
+{
+  "ORD-1001": {
+    "customer_email": "sara@example.com",
+    "status": "delivered",
+    "ordered_on": "2026-11-02",
+    "delivered_on": "2026-11-05",
+    "items": [{"sku": "HP-220", "name": "NovaSound ANC Headphones", "qty": 1, "unit_price": 199.0}],
+    "shipping": 0.0,
+    "total": 199.0
+  },
+  "ORD-1002": {
+    "customer_email": "omar@example.com",
+    "status": "shipped",
+    "ordered_on": "2026-11-12",
+    "carrier": "DHL",
+    "tracking": "DHL-77812390",
+    "items": [
+      {"sku": "KB-110", "name": "KeyForge Mechanical Keyboard", "qty": 2, "unit_price": 89.0},
+      {"sku": "MS-050", "name": "GlidePro Wireless Mouse", "qty": 1, "unit_price": 39.0}
+    ],
+    "shipping": 9.99,
+    "total": 226.99
+  },
+  "ORD-1003": {
+    "customer_email": "sara@example.com",
+    "status": "delivered",
+    "ordered_on": "2026-09-20",
+    "delivered_on": "2026-09-24",
+    "items": [{"sku": "MN-270", "name": "ClearView 27-inch Monitor", "qty": 1, "unit_price": 329.0}],
+    "shipping": 0.0,
+    "total": 329.0
+  },
+  "ORD-1004": {
+    "customer_email": "lina@example.com",
+    "status": "processing",
+    "ordered_on": "2026-11-16",
+    "items": [{"sku": "SP-012", "name": "PocketBeat Bluetooth Speaker", "qty": 3, "unit_price": 59.0}],
+    "shipping": 0.0,
+    "total": 177.0
+  }
+}

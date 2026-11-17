@@ -1,0 +1,94 @@
+{
+  "tasks": [
+    {
+      "id": "order_status_simple",
+      "prompt": "What is the status of order ORD-1002 and what is the tracking number?",
+      "expected_contains": ["shipped", "DHL-77812390"],
+      "must_call": ["lookup_order"],
+      "max_steps": 3,
+      "script": [[{"tool": "lookup_order", "input": {"order_id": "ORD-1002"}}], "Order ORD-1002 has shipped with DHL, tracking number DHL-77812390."]
+    },
+    {
+      "id": "order_total_check",
+      "prompt": "Can you verify that the total of order ORD-1002 matches its line items plus shipping?",
+      "expected_number": 226.99,
+      "must_call": ["lookup_order", "calculate"],
+      "script": [[{"tool": "lookup_order", "input": {"order_id": "ORD-1002"}}], [{"tool": "calculate", "input": {"expression": "2*89 + 39 + 9.99"}}], "Yes: 2 x 89.00 + 39.00 + 9.99 shipping = 226.99, which matches the order total of 226.99."]
+    },
+    {
+      "id": "return_window_open",
+      "prompt": "Sara (sara@example.com) wants to return the headphones from order ORD-1001 today. Is she still within the return window?",
+      "expected_contains": ["yes"],
+      "must_call": ["lookup_order", "get_policy", "days_between"],
+      "script": [[{"tool": "lookup_order", "input": {"order_id": "ORD-1001"}}, {"tool": "get_policy", "input": {"topic": "returns"}}], [{"tool": "today", "input": {}}], [{"tool": "days_between", "input": {"start": "2026-11-05", "end": "2026-11-17"}}], "Yes. The headphones were delivered on 2026-11-05, 12 days ago, and opened audio products can be returned within 14 days of delivery, so she is still inside the window."]
+    },
+    {
+      "id": "return_window_closed",
+      "prompt": "Is the monitor from order ORD-1003 still returnable today? Answer yes or no with the reason.",
+      "expected_contains": ["no"],
+      "must_call": ["lookup_order", "days_between"],
+      "script": [[{"tool": "lookup_order", "input": {"order_id": "ORD-1003"}}, {"tool": "get_policy", "input": {"topic": "returns"}}, {"tool": "today", "input": {}}], [{"tool": "days_between", "input": {"start": "2026-09-24", "end": "2026-11-17"}}], "No. It was delivered on 2026-09-24, 54 days ago, which is beyond the 30-day return window."]
+    },
+    {
+      "id": "unknown_order_recovery",
+      "prompt": "What is the status of order ORD-9999?",
+      "expected_contains": ["not found"],
+      "must_call": ["lookup_order"],
+      "max_steps": 3,
+      "script": [[{"tool": "lookup_order", "input": {"order_id": "ORD-9999"}}], "I could not find order ORD-9999 in our system (order not found). Please double-check the order id."]
+    },
+    {
+      "id": "catalogue_cheapest_monitor",
+      "prompt": "Which monitor do you sell that is cheapest, and how much does it cost?",
+      "expected_contains": ["24-inch"],
+      "expected_number": 219,
+      "must_call": ["search_products"],
+      "must_not_call": ["lookup_order"],
+      "script": [[{"tool": "search_products", "input": {"query": "monitor"}}], "The cheapest monitor is the ClearView 24-inch Monitor at 219.00."]
+    },
+    {
+      "id": "out_of_stock",
+      "prompt": "Are the NovaSound Lite headphones in stock?",
+      "expected_contains": ["out of stock"],
+      "must_call": ["search_products"],
+      "script": [[{"tool": "search_products", "input": {"query": "NovaSound Lite headphones"}}], "No, the NovaSound Lite Headphones are currently out of stock (0 units)."]
+    },
+    {
+      "id": "warranty_remaining",
+      "prompt": "How many months of warranty are left on the monitor from order ORD-1003?",
+      "expected_number": 34,
+      "tolerance": 1,
+      "must_call": ["lookup_order"],
+      "script": [[{"tool": "lookup_order", "input": {"order_id": "ORD-1003"}}, {"tool": "today", "input": {}}], [{"tool": "search_products", "input": {"query": "MN-270"}}], [{"tool": "days_between", "input": {"start": "2026-09-24", "end": "2026-11-17"}}], "The monitor has a 36-month warranty starting on the delivery date 2026-09-24. About 2 months have passed, so roughly 34 months remain."]
+    },
+    {
+      "id": "customer_order_history",
+      "prompt": "List every order for sara@example.com with its total.",
+      "expected_contains": ["ORD-1001", "ORD-1003"],
+      "expected_number": 329,
+      "must_call": ["orders_for_customer"],
+      "script": [[{"tool": "orders_for_customer", "input": {"email": "sara@example.com"}}], "Sara has two orders: ORD-1001 (delivered, 199.00) and ORD-1003 (delivered, 329.00)."]
+    },
+    {
+      "id": "shipping_cost_rule",
+      "prompt": "If I buy one VoltLink USB-C cable only, how much will standard shipping cost?",
+      "expected_number": 9.99,
+      "must_call": ["get_policy"],
+      "script": [[{"tool": "search_products", "input": {"query": "USB-C cable"}}, {"tool": "get_policy", "input": {"topic": "shipping"}}], "The cable costs 12.00, which is below the 50.00 free-shipping threshold, so standard shipping is 9.99."]
+    },
+    {
+      "id": "refund_timing_cancelled",
+      "prompt": "Lina wants to cancel order ORD-1004 before it ships. When will she get her money back?",
+      "expected_contains": ["immediately"],
+      "must_call": ["lookup_order", "get_policy"],
+      "script": [[{"tool": "lookup_order", "input": {"order_id": "ORD-1004"}}, {"tool": "get_policy", "input": {"topic": "refunds"}}], "Order ORD-1004 is still processing, so it can be cancelled before shipping and is refunded in full immediately."]
+    },
+    {
+      "id": "bad_tool_input_recovery",
+      "prompt": "What does the policy say about 'exchanges'? If there is no such policy, tell me which policies exist.",
+      "expected_contains": ["returns", "refunds", "shipping", "warranty"],
+      "must_call": ["get_policy"],
+      "script": [[{"tool": "get_policy", "input": {"topic": "exchanges"}}], "There is no 'exchanges' policy. The available policies are returns, refunds, shipping and warranty."]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+[project]
+name = "agentlab"
+version = "0.1.0"
+description = "A transparent tool-using LLM agent framework with typed tools, structured tracing, an evaluation harness and an MCP server."
+requires-python = ">=3.11"
+readme = "README.md"
+
+[tool.ruff]
+line-length = 150
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
