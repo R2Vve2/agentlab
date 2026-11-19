@@ -1,6 +1,6 @@
 """Expose the store tools as an MCP (Model Context Protocol) server over stdio.
 
-    pip install mcp
+    pip install "mcp<2"
     python -m agentlab.mcp_server
 
 Any MCP-capable client (Claude Desktop, Claude Code, an IDE) can then call the same tools the

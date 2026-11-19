@@ -119,7 +119,7 @@ pass rate, average steps, tokens and estimated cost. The CI gate requires 12/12 
 ### MCP server (`agentlab/mcp_server.py`)
 
 ```bash
-pip install mcp && python -m agentlab.mcp_server
+pip install "mcp<2" && python -m agentlab.mcp_server
 ```
 
 Registers every tool from the registry on a `FastMCP` stdio server, so the identical tool implementations can be
