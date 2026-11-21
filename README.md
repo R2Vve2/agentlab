@@ -55,12 +55,31 @@ Yes. The headphones were delivered on 2026-11-05 (12 days ago); opened audio pro
 [completed] steps=3 tokens=4210+312 cost=$0.02308 trace=4f1c9e2a7b10
 ```
 
+### Web app
+
+```bash
+uvicorn agentlab.server:app --reload       # http://localhost:8000
+```
+
+The page has three parts:
+
+- **Replay:** runs any of the 12 graded tasks through the real agent loop and real tools, with `ScriptedLLM` playing the
+  model, then shows the answer, the grade and every step of the trace. Free, no API key.
+- **Live questions:** when `ANTHROPIC_API_KEY` is set, visitors ask their own questions and Claude drives the agent.
+  A per-visitor rate limit (`AGENTLAB_RATE_LIMIT_PER_MINUTE`, default 5) and a daily cap (`AGENTLAB_DAILY_RUN_LIMIT`,
+  default 100) bound the cost of a public deployment. `AGENTLAB_MODEL` and `AGENTLAB_EFFORT` choose the model and effort.
+- **Tool playground:** calls one tool directly with JSON input, including invalid input to show error handling.
+
+To host it for free, create a Render web service from this public repository (Docker runtime, Free instance) or apply
+`render.yaml` as a Blueprint. Add `ANTHROPIC_API_KEY` as a secret only if you want live questions and accept the cost.
+
 ### Docker
 
 ```bash
 docker build -t agentlab .
-docker run --rm agentlab                                         # runs the offline eval suite
-docker run --rm -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY agentlab run "What is the status of ORD-1002?"
+docker run --rm -p 8000:8000 agentlab                            # web app on http://localhost:8000
+docker run --rm agentlab python -m agentlab eval --min-pass-rate 1.0   # offline eval suite
+docker run --rm -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY agentlab python -m agentlab run "What is the status of ORD-1002?"
 ```
 
 ## How it works

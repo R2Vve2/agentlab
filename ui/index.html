@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AgentLab</title>
+<style>
+  :root { --bg:#0f1115; --panel:#171a21; --panel2:#1d212a; --text:#e6e6e6; --muted:#9aa3b2; --accent:#4f8cff; --border:#262b36;
+          --ok:#2fb36d; --bad:#e5534b; --warn:#e0a526; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); }
+  header { padding:16px 24px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+  header h1 { margin:0; font-size:18px; }
+  #status { color:var(--muted); font-size:13px; }
+  main { max-width:1150px; margin:0 auto; padding:24px 16px; display:grid; grid-template-columns: 1fr 1.25fr; gap:20px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .col { display:grid; gap:20px; align-content:start; min-width:0; }
+  .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px; min-width:0; }
+  h2 { font-size:15px; margin:0 0 10px; }
+  .note { color:var(--muted); font-size:13px; margin:0 0 12px; line-height:1.5; }
+  a { color:var(--accent); }
+  textarea, select { width:100%; background:#0f1115; color:var(--text); border:1px solid var(--border); border-radius:8px; padding:10px; font:inherit; font-size:14px; }
+  textarea.code { font-family:ui-monospace,Consolas,monospace; font-size:13px; }
+  .btn { background:var(--accent); color:#fff; border:0; border-radius:8px; padding:9px 16px; font:inherit; font-size:14px; cursor:pointer; }
+  .btn:disabled { opacity:.45; cursor:default; }
+  .ghost { background:transparent; color:var(--muted); border:1px solid var(--border); border-radius:999px; padding:5px 12px; font:inherit; font-size:13px; cursor:pointer; white-space:nowrap; }
+  .ghost:hover { color:var(--text); border-color:var(--accent); }
+  .row { display:flex; gap:10px; align-items:center; margin-top:10px; flex-wrap:wrap; }
+  .task { display:flex; gap:10px; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:14px; }
+  .task:last-child { border-bottom:0; }
+  .task span { line-height:1.4; }
+  .answer { white-space:pre-wrap; line-height:1.55; font-size:15px; }
+  .tag { display:inline-block; padding:2px 9px; border-radius:999px; font-size:12px; font-weight:600; }
+  .stats { display:flex; gap:14px; flex-wrap:wrap; color:var(--muted); font-size:13px; margin:10px 0; }
+  .step { border-left:3px solid var(--border); padding:6px 0 6px 12px; margin:8px 0; }
+  .step.llm { border-color:var(--accent); }
+  .step.tool { border-color:var(--ok); }
+  .step.err { border-color:var(--bad); }
+  .step .h { font-size:13px; font-weight:600; }
+  .step .h .t { color:var(--muted); font-weight:400; margin-left:6px; }
+  pre { margin:6px 0 0; background:var(--panel2); border-radius:6px; padding:8px 10px; font-size:12px; overflow-x:auto; white-space:pre-wrap; word-break:break-word; max-height:220px; }
+  .muted { color:var(--muted); font-size:13px; }
+  .hint code { background:var(--panel2); padding:1px 5px; border-radius:4px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>AgentLab &mdash; a tool-using AI agent</h1>
+  <span id="status">loading&hellip;</span>
+</header>
+<main>
+  <div class="col">
+    <section class="panel">
+      <p class="note">A customer-support agent for a small online electronics store. It answers by calling tools (order lookup,
+        product search, store policies, a calculator and date maths) and every step is shown on the right.
+        <a href="https://github.com/R2Vve2/agentlab">Source on GitHub</a> · <a href="/docs">API docs</a></p>
+      <h2>Ask the agent</h2>
+      <textarea id="q" rows="3" placeholder="e.g. Is the monitor from order ORD-1003 still returnable today?"></textarea>
+      <div class="row"><button class="btn" id="ask">Ask</button><span class="muted" id="livenote"></span></div>
+      <p class="note hint" style="margin-top:10px">Data you can ask about: orders <code>ORD-1001</code>&ndash;<code>ORD-1004</code>,
+        customers <code>sara@example.com</code>, <code>omar@example.com</code>, <code>lina@example.com</code>, plus the product catalogue
+        and the returns, refunds, shipping and warranty policies. The store's date is fixed at 2026-11-17 so answers stay reproducible.</p>
+    </section>
+    <section class="panel">
+      <h2>Graded example tasks</h2>
+      <p class="note">Replay shows the ideal run of each evaluation task through the real agent loop and real tools, then grades it.
+        Replays are free and need no API key.</p>
+      <div id="tasks"></div>
+    </section>
+    <section class="panel">
+      <h2>Tool playground</h2>
+      <p class="note">Call one tool directly with JSON input. Invalid input comes back as an error the agent could recover from.</p>
+      <select id="tool"></select>
+      <p class="muted" id="tooldesc" style="margin:8px 0"></p>
+      <textarea id="toolin" class="code" rows="3"></textarea>
+      <div class="row"><button class="btn" id="runtool">Run tool</button></div>
+      <pre id="toolout" hidden></pre>
+    </section>
+  </div>
+  <div class="col">
+    <section class="panel" id="result">
+      <h2>Result</h2>
+      <p class="muted">Pick a task on the left and press Replay, or ask your own question when live mode is on.</p>
+    </section>
+  </div>
+</main>
+<script>
+const $ = (s) => document.querySelector(s);
+const esc = (t) => String(t ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pretty = (v) => { if (typeof v === 'string') { try { return JSON.stringify(JSON.parse(v), null, 2); } catch { return v; } } return JSON.stringify(v, null, 2); };
+let INFO = null;
+
+function renderTrace(data) {
+  const t = data.trace;
+  const badge = data.mode === 'replay'
+    ? `<span class="tag" style="background:${data.passed ? 'var(--ok)' : 'var(--bad)'};color:#0f1115">${data.passed ? 'PASSED' : 'FAILED'} grading</span>`
+    : `<span class="tag" style="background:var(--accent);color:#fff">LIVE · ${esc(t.model)}</span>`;
+  const failures = (data.failures || []).map(f => `<li>${esc(f)}</li>`).join('');
+  let llmN = 0;
+  const steps = t.spans.map(s => {
+    if (s.kind === 'llm') {
+      llmN += 1;
+      const stop = s.output && s.output.stop_reason;
+      const label = stop === 'tool_use' ? 'decided to call tools' : stop === 'end_turn' ? 'wrote the final answer' : `stopped: ${stop}`;
+      return `<div class="step llm"><div class="h">Model step ${llmN}<span class="t">${esc(label)}</span></div></div>`;
+    }
+    return `<div class="step tool ${s.is_error ? 'err' : ''}"><div class="h">${s.is_error ? 'Tool error' : 'Tool'}: ${esc(s.name)}
+      <span class="t">${s.duration_ms} ms</span></div><pre>input  ${esc(JSON.stringify(s.input))}\noutput ${esc(pretty(s.output))}</pre></div>`;
+  }).join('');
+  $('#result').innerHTML = `
+    <h2>Result</h2>
+    <p class="muted" style="margin:0 0 8px">${esc(data.prompt)}</p>
+    ${badge}
+    <div class="answer" style="margin-top:12px">${esc(t.final_answer || '(no answer)')}</div>
+    ${failures ? `<ul class="muted">${failures}</ul>` : ''}
+    <div class="stats"><span>status: ${esc(t.status)}</span><span>model steps: ${t.steps}</span><span>tool calls: ${t.tool_calls.length}</span>
+      <span>tokens: ${t.input_tokens} in / ${t.output_tokens} out</span><span>est. cost: $${t.cost_usd}</span></div>
+    <h2 style="margin-top:14px">Trace</h2>${steps}`;
+}
+
+async function call(url, body) {
+  const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const a = await r.json();
+  if (!r.ok) throw new Error(typeof a.detail === 'string' ? a.detail : JSON.stringify(a.detail || a));
+  return a;
+}
+async function replay(id, btn) {
+  btn.disabled = true;
+  try { renderTrace(await call('/api/replay', { task_id: id })); }
+  catch (e) { $('#result').innerHTML = `<h2>Result</h2><p class="muted">Error: ${esc(e.message)}</p>`; }
+  btn.disabled = false;
+}
+$('#ask').onclick = async () => {
+  const task = $('#q').value.trim();
+  if (task.length < 3 || !INFO || !INFO.live) return;
+  $('#ask').disabled = true;
+  $('#result').innerHTML = '<h2>Result</h2><p class="muted">The agent is working: calling the model and its tools…</p>';
+  try { renderTrace(await call('/api/run', { task })); }
+  catch (e) { $('#result').innerHTML = `<h2>Result</h2><p class="muted">Error: ${esc(e.message)}</p>`; }
+  $('#ask').disabled = false;
+};
+$('#q').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#ask').click(); } });
+
+function exampleInput(schema) {
+  const out = {};
+  const samples = { order_id: 'ORD-1002', email: 'sara@example.com', query: 'monitor', topic: 'returns', expression: '2 * 89 + 39 + 9.99', start: '2026-11-05', end: '2026-11-17', max_results: 3 };
+  for (const k of Object.keys(schema.properties || {})) if (k in samples) out[k] = samples[k];
+  return JSON.stringify(out, null, 2);
+}
+function selectTool() {
+  const t = INFO.tools.find(x => x.name === $('#tool').value);
+  $('#tooldesc').textContent = t.description;
+  $('#toolin').value = exampleInput(t.input_schema);
+  $('#toolout').hidden = true;
+}
+$('#tool').onchange = selectTool;
+$('#runtool').onclick = async () => {
+  let input;
+  try { input = JSON.parse($('#toolin').value || '{}'); } catch { $('#toolout').hidden = false; $('#toolout').textContent = 'Input is not valid JSON.'; return; }
+  try {
+    const r = await call(`/api/tools/${encodeURIComponent($('#tool').value)}`, { input });
+    $('#toolout').hidden = false;
+    $('#toolout').textContent = (r.is_error ? 'ERROR  ' : '') + pretty(r.output);
+  } catch (e) { $('#toolout').hidden = false; $('#toolout').textContent = 'Error: ' + e.message; }
+};
+
+(async () => {
+  INFO = await (await fetch('/api/info')).json();
+  $('#status').textContent = INFO.live ? `live mode · ${INFO.model}` : 'replay mode (no API key on this server)';
+  $('#ask').disabled = !INFO.live;
+  $('#q').disabled = !INFO.live;
+  $('#livenote').textContent = INFO.live
+    ? `${INFO.rate_limit_per_minute} questions per minute per visitor · ${INFO.daily_runs_remaining ?? 'unlimited'} left today`
+    : 'Live questions are off on this deployment. Use Replay below.';
+  $('#tasks').innerHTML = INFO.tasks.map(t => `<div class="task"><span>${esc(t.prompt)}</span>
+    <span style="display:flex;gap:6px">${INFO.live ? `<button class="ghost" data-ask="${esc(t.id)}">Ask live</button>` : ''}
+    <button class="ghost" data-replay="${esc(t.id)}">Replay</button></span></div>`).join('');
+  $('#tasks').onclick = (e) => {
+    const r = e.target.closest('[data-replay]'); if (r) return replay(r.dataset.replay, r);
+    const a = e.target.closest('[data-ask]'); if (a) { $('#q').value = INFO.tasks.find(t => t.id === a.dataset.ask).prompt; $('#ask').click(); }
+  };
+  $('#tool').innerHTML = INFO.tools.map(t => `<option value="${esc(t.name)}">${esc(t.name)}</option>`).join('');
+  selectTool();
+})();
+</script>
+</body>
+</html>

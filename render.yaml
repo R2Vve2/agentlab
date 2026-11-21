@@ -1,0 +1,15 @@
+# Render Blueprint (free plan). Replay mode works with no settings.
+# To enable live questions, add ANTHROPIC_API_KEY as a secret environment variable in the Render dashboard.
+services:
+  - type: web
+    name: agentlab
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: AGENTLAB_RATE_LIMIT_PER_MINUTE
+        value: "5"
+      - key: AGENTLAB_DAILY_RUN_LIMIT
+        value: "100"
